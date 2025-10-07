@@ -1,0 +1,39 @@
+---
+title: "FILTRANDO OS VÍRUS_CC"
+author: "Diego Pereira"
+date: "2024-03-19"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+## Carregando os pacotes
+```{r}
+library(readxl)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(openxlsx)
+```
+
+## Espécies virais
+```{r}
+virus_tab_cc = read.delim2("virustab_cc.tsv")
+virus_tab_cc = virus_tab_cc %>% 
+  select(-taxRank, -taxID, -Max, -lineage) %>% 
+  mutate_all(replace_na, 0) %>% 
+  rename(Taxon = name)
+  
+# Filtrar as espécies e somar as reads das linhas
+virus_tab_cc = virus_tab_cc %>% 
+  cbind(total_sum = rowSums(.[,2:29])) %>%
+  filter(grepl("virus", Taxon) & total_sum > 0)
+
+# Criar um dataframe apenas com Taxon e abundância geral de cada taxon
+total_sum = data.frame(Taxon = virus_tab_cc$Taxon, total_sum = virus_tab_cc$total_sum)
+
+# Remover a coluna total_sum
+virus_tab_cc$total_sum = NULL
+
+# Salvar a tabela de espécies virais em xlsx
+write.xlsx(virus_tab_cc, file = "virus_tab_cc_espécies.xlsx")
+```
